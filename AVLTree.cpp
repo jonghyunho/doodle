@@ -4,6 +4,10 @@
 
 using namespace std;
 
+int MAX(int a, int b) {
+	return a >= b ? a : b;
+}
+
 struct Node {
 	Node* parent;
 	Node* left;
@@ -43,6 +47,8 @@ public:
 				if (node->left == NULL) {
 					node->left = new Node(key);
 					node->left->parent = node;
+
+					rebalance(node->parent);
 				}
 				else {
 					addNode(node->left, key);
@@ -52,6 +58,8 @@ public:
 				if (node->right == NULL) {
 					node->right = new Node(key);
 					node->right->parent = node;
+
+					rebalance(node->parent);
 				}
 				else {
 					addNode(node->right, key);
@@ -87,6 +95,8 @@ public:
 						delete node;
 						node = NULL;
 					}
+
+					rebalance(parent);
 					return key;
 				}
 				else {
@@ -119,6 +129,7 @@ public:
 							delete node;
 							node = NULL;
 						}
+						rebalance(parent);
 						return key;
 					}
 				}
@@ -140,6 +151,107 @@ public:
 				return searchMinNode(node->left);
 			}
 		}
+	}
+
+	void rebalance(Node* node) {
+		if (node == NULL) {
+			return;
+		}
+
+		int balance = height(node->right) - height(node->left);
+
+		if (balance <= -2) {
+			if (height(node->left->left) >= height(node->left->right)) {
+				rotateRight(node);
+			}
+			else {
+				rotateLR(node);
+			}
+		}
+		else if (balance >= 2) {
+			if (height(node->right->right) >= height(node->right->left)) {
+				rotateLeft(node);
+			}
+			else {
+				rotateRL(node);
+			}
+		}
+
+		rebalance(node->parent);
+	}
+
+	Node* rotateRight(Node* node) {
+		Node* parent = node->parent;
+		Node* child = node->left;
+
+		node->left = child->right;
+		if (node->left != NULL)
+			node->left->parent = node;
+
+		child->right = node;
+		node->parent = child;
+
+		if (parent != NULL) {
+			if (parent->left != NULL && parent->left->key == node->key) {
+				parent->left = child;
+			}
+			else if (parent->right != NULL) {
+				parent->right = child;
+			}
+			child->parent = parent;
+		}
+		else {
+			child->parent = NULL;
+			root = child;
+		}
+
+		return child;
+	}
+
+	Node* rotateLeft(Node* node) {
+		Node* parent = node->parent;
+		Node* child = node->right;
+
+		node->right = child->left;
+		if (node->right != NULL)
+			node->right->parent = node;
+
+		child->left = node;
+		node->parent = child;
+
+		if (parent != NULL) {
+			if (parent->left != NULL && parent->left->key == node->key) {
+				parent->left = child;
+			}
+			else if (parent->right != NULL) {
+				parent->right = child;
+			}
+			child->parent = parent;
+		} 
+		else {
+			child->parent = NULL;
+			root = child;
+		}
+
+		return child;
+	}
+
+	Node* rotateLR(Node* node) {
+		node->left = rotateLeft(node->left);
+		return rotateRight(node);
+	}
+
+	Node* rotateRL(Node* node) {
+		node->right = rotateRight(node->right);
+		return rotateLeft(node);
+	}
+
+	int height(Node *node) {
+		if (node == NULL) {
+			return 0;
+		}
+
+		return MAX(height(node->left), height(node->right)) + 1;
 	}
 
 	void inorderTraverse(Node* node) {
@@ -182,17 +294,25 @@ int main() {
 		myTree.addNode(*root, key);
 	}
 
+	cout << endl;
 	myTree.preorderTraverse(*root, 0);
 	cout << endl;
-
-	cout << "delKey : " << delKey << endl;
-	myTree.deleteNode(*root, delKey);
-	myTree.preorderTraverse(*root, 0);
-	cout << endl;
-
-	cout << "Sorted" << endl;
+	cout << "Sorted : ";
 	myTree.inorderTraverse(*root);
 	cout << endl;
+
+	cout << endl << "delete key : " << delKey << endl;
+	myTree.deleteNode(*root, delKey);
+	
+	cout << endl;
+	myTree.preorderTraverse(*root, 0);
+	cout << endl;
+
+	cout << "Sorted : ";
+	myTree.inorderTraverse(*root);
+	cout << endl;
+
+	cout << "height : " << myTree.height(*root) << endl;
 
 	return 0;
 }
